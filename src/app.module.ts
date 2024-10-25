@@ -4,6 +4,8 @@ import { BrandsModule } from './brands/brands.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { envs } from './config/envs';
 import { Brand } from './brands/entities/brand.entity';
+import { ModelsModule } from './models/models.module';
+import { Model } from './models/entities/model.entity';
 
 @Module({
   imports: [
@@ -16,9 +18,10 @@ import { Brand } from './brands/entities/brand.entity';
       username: envs.DB_USER,
       password: envs.DB_PASSWORD,
       database: envs.DB_DATABASE,
-      entities: [Brand],
+      entities: [Brand, Model],
       synchronize: true,
     }),
+    ModelsModule,
   ],
 })
 export class AppModule {}

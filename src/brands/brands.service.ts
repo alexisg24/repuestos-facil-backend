@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Brand } from './entities/brand.entity';
 import { Repository } from 'typeorm';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { paginationResponse } from 'src/common/util';
 
 @Injectable()
 export class BrandsService {
@@ -29,14 +30,13 @@ export class BrandsService {
       skip: (currentPage - 1) * limitPerPage,
       take: limitPerPage,
     });
-    return {
+
+    return paginationResponse({
       data: brands,
-      pagination: {
-        page: currentPage,
-        lastPage: totalPages,
-        total: totalItems,
-      },
-    };
+      page: currentPage,
+      totalPages: totalPages,
+      total: totalItems,
+    });
   }
 
   async findOne(id: string) {
