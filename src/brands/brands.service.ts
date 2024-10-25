@@ -26,10 +26,14 @@ export class BrandsService {
     const totalItems = await this.brandRepository.count();
     const totalPages = Math.ceil(totalItems / limitPerPage);
 
-    const brands = await this.brandRepository.find({
-      skip: (currentPage - 1) * limitPerPage,
-      take: limitPerPage,
-    });
+    const queryBuilder = this.brandRepository.createQueryBuilder('brand');
+    const brands = await queryBuilder
+      .where('LOWER(brand.name) LIKE LOWER(:search)', {
+        search: `%${paginationDto.search}%`,
+      })
+      .skip((currentPage - 1) * limitPerPage)
+      .take(limitPerPage)
+      .getMany();
 
     return paginationResponse({
       data: brands,
