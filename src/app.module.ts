@@ -6,6 +6,7 @@ import { envs } from './config/envs';
 import { Brand } from './brands/entities/brand.entity';
 import { ModelsModule } from './models/models.module';
 import { Model } from './models/entities/model.entity';
+import { Vehicle } from './vehicles/entities/vehicle.entity';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { Model } from './models/entities/model.entity';
       username: envs.DB_USER,
       password: envs.DB_PASSWORD,
       database: envs.DB_DATABASE,
-      entities: [Brand, Model],
+      entities: [Brand, Model, Vehicle],
       synchronize: true,
     }),
     ModelsModule,
