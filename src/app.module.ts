@@ -7,6 +7,8 @@ import { Brand } from './brands/entities/brand.entity';
 import { ModelsModule } from './models/models.module';
 import { Model } from './models/entities/model.entity';
 import { Vehicle } from './vehicles/entities/vehicle.entity';
+import { CategoriesModule } from './categories/categories.module';
+import { Category } from './categories/entities/category.entity';
 
 @Module({
   imports: [
@@ -19,10 +21,11 @@ import { Vehicle } from './vehicles/entities/vehicle.entity';
       username: envs.DB_USER,
       password: envs.DB_PASSWORD,
       database: envs.DB_DATABASE,
-      entities: [Brand, Model, Vehicle],
+      entities: [Brand, Model, Vehicle, Category],
       synchronize: true,
     }),
     ModelsModule,
+    CategoriesModule,
   ],
 })
 export class AppModule {}
