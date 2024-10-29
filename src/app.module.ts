@@ -9,6 +9,7 @@ import { Model } from './models/entities/model.entity';
 import { Vehicle } from './vehicles/entities/vehicle.entity';
 import { CategoriesModule } from './categories/categories.module';
 import { Category } from './categories/entities/category.entity';
+import { FilesModule } from './files/files.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { Category } from './categories/entities/category.entity';
     }),
     ModelsModule,
     CategoriesModule,
+    FilesModule,
   ],
 })
 export class AppModule {}
