@@ -4,11 +4,13 @@ import {
   Column,
   Entity,
   JoinColumn,
+  ManyToMany,
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { VehicleImages } from './vehicle-images.entity';
+import { Product } from 'src/products/entities/product.entity';
 
 @Entity()
 export class Vehicle {
@@ -47,4 +49,11 @@ export class Vehicle {
     cascade: true,
   })
   image?: VehicleImages | null;
+
+  @ManyToMany(() => Product, (product) => product.compatibleVehicles, {
+    cascade: false,
+    onDelete: 'CASCADE',
+    nullable: true,
+  })
+  compatibleProducts: Product[];
 }

@@ -11,6 +11,9 @@ import { CategoriesModule } from './categories/categories.module';
 import { Category } from './categories/entities/category.entity';
 import { FilesModule } from './files/files.module';
 import { VehicleImages } from './vehicles/entities/vehicle-images.entity';
+import { ProductsModule } from './products/products.module';
+import { Product } from './products/entities/product.entity';
+import { ProductImage } from './products/entities/product-image.entity';
 
 @Module({
   imports: [
@@ -23,12 +26,21 @@ import { VehicleImages } from './vehicles/entities/vehicle-images.entity';
       username: envs.DB_USER,
       password: envs.DB_PASSWORD,
       database: envs.DB_DATABASE,
-      entities: [Brand, Model, Vehicle, Category, VehicleImages],
+      entities: [
+        Brand,
+        Model,
+        Vehicle,
+        Category,
+        VehicleImages,
+        Product,
+        ProductImage,
+      ],
       synchronize: true,
     }),
     ModelsModule,
     CategoriesModule,
     FilesModule,
+    ProductsModule,
   ],
 })
 export class AppModule {}
