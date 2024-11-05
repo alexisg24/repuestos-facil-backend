@@ -10,6 +10,7 @@ import { Vehicle } from './vehicles/entities/vehicle.entity';
 import { CategoriesModule } from './categories/categories.module';
 import { Category } from './categories/entities/category.entity';
 import { FilesModule } from './files/files.module';
+import { VehicleImages } from './vehicles/entities/vehicle-images.entity';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { FilesModule } from './files/files.module';
       username: envs.DB_USER,
       password: envs.DB_PASSWORD,
       database: envs.DB_DATABASE,
-      entities: [Brand, Model, Vehicle, Category],
+      entities: [Brand, Model, Vehicle, Category, VehicleImages],
       synchronize: true,
     }),
     ModelsModule,

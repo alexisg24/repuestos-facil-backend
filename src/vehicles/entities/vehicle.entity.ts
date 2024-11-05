@@ -4,9 +4,11 @@ import {
   Column,
   Entity,
   JoinColumn,
+  ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { VehicleImages } from './vehicle-images.entity';
 
 @Entity()
 export class Vehicle {
@@ -28,15 +30,21 @@ export class Vehicle {
   @Column('varchar')
   fuel: string;
 
-  @OneToOne(() => Model, (model) => model.id, {
+  @ManyToOne(() => Model, (model) => model.id, {
     nullable: false,
   })
   @JoinColumn()
   model: Model;
 
-  @OneToOne(() => Brand, (model) => model.id, {
+  @ManyToOne(() => Brand, (model) => model.id, {
     nullable: false,
   })
   @JoinColumn()
   brand: Brand;
+
+  @OneToOne(() => VehicleImages, (vehicleImage) => vehicleImage.vehicle, {
+    nullable: true,
+    cascade: true,
+  })
+  image?: VehicleImages | null;
 }

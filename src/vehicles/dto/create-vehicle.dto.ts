@@ -1,5 +1,11 @@
 import { Type } from 'class-transformer';
-import { IsPositive, IsString, IsUUID, MinLength } from 'class-validator';
+import {
+  IsOptional,
+  IsPositive,
+  IsString,
+  IsUUID,
+  MinLength,
+} from 'class-validator';
 
 export class CreateVehicleDto {
   @IsString()
@@ -33,4 +39,8 @@ export class CreateVehicleDto {
   @IsString()
   @IsUUID()
   brandId: string;
+
+  @IsString()
+  @IsOptional()
+  image?: string;
 }

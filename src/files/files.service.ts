@@ -2,7 +2,6 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { MultipleFileUpload } from './interfaces';
-import { envs } from 'src/config/envs';
 @Injectable()
 export class FilesService {
   getStaticFile(entity: string, filename: string) {
@@ -19,7 +18,7 @@ export class FilesService {
       throw new BadRequestException('You must upload at least one file');
     }
     const secureUrls = uploadedFiles.files.map((file) => {
-      const secureUrl = `${envs.API_HOST_URL}/uploads/${entity}/${file.filename}`;
+      const secureUrl = `/uploads/${entity}/${file.filename}`;
       return secureUrl;
     });
 

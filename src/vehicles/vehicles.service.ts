@@ -7,34 +7,43 @@ import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Vehicle } from './entities/vehicle.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { paginationResponse } from 'src/common/util';
 import { BrandsService } from 'src/brands/brands.service';
 import { ModelsService } from 'src/models/models.service';
 import { Brand } from 'src/brands/entities/brand.entity';
 import { Model } from 'src/models/entities/model.entity';
+import { VehicleImages } from './entities/vehicle-images.entity';
 
 @Injectable()
 export class VehiclesService {
   constructor(
     @InjectRepository(Vehicle)
     private readonly vehicleRepository: Repository<Vehicle>,
+    @InjectRepository(VehicleImages)
+    private readonly imageRepository: Repository<VehicleImages>,
     private readonly brandsService: BrandsService,
     private readonly modelsService: ModelsService,
+    private readonly DataSource: DataSource,
   ) {}
 
   async create(createVehicleDto: CreateVehicleDto) {
     const brand = await this.brandsService.findOne(createVehicleDto.brandId);
     const model = await this.modelsService.findOne(createVehicleDto.modelId);
-
+    // Create query runner
     const vehicle = this.vehicleRepository.create({
       ...createVehicleDto,
       brand,
       model,
+      image: createVehicleDto.image
+        ? this.imageRepository.create({
+            url: createVehicleDto.image,
+          })
+        : null,
     });
-    await this.vehicleRepository.save(vehicle);
 
+    await this.vehicleRepository.save(vehicle);
     return vehicle;
   }
 
@@ -56,6 +65,7 @@ export class VehiclesService {
       )
       .leftJoinAndSelect('vehicle.brand', 'brand')
       .leftJoinAndSelect('vehicle.model', 'model')
+      .leftJoinAndSelect('vehicle.image', 'image')
       .take(limit)
       .skip((currentPage - 1) * limit)
       .getMany();
@@ -68,10 +78,10 @@ export class VehiclesService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<Vehicle> {
     const vehicle = await this.vehicleRepository.findOne({
       where: { id },
-      relations: ['brand', 'model'],
+      relations: ['brand', 'model', 'image'],
     });
 
     if (!vehicle) {
@@ -100,14 +110,46 @@ export class VehiclesService {
       model = await this.modelsService.findOne(updateVehicleDto.modelId);
     }
 
-    const updatedVehicle = this.vehicleRepository.save({
-      ...vehicle,
-      ...updateVehicleDto,
-      brand: brand || vehicle.brand,
-      model: model || vehicle.model,
-    });
+    // createQuery Runner
+    const queryRunner = this.DataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      let image = vehicle.image ?? null;
 
-    return updatedVehicle;
+      // If dto has image
+      if (updateVehicleDto.image) {
+        // If the vehicle already has an image, delete it
+        if (image) {
+          await queryRunner.manager.delete(Image, {
+            image: { id: image.id },
+          });
+        }
+        // Create the new image
+        image = this.imageRepository.create({
+          url: updateVehicleDto.image,
+        });
+        image = await queryRunner.manager.save(image);
+      }
+
+      // Update the vehicle object properties
+      Object.assign(vehicle, updateVehicleDto);
+
+      // Update the relations
+      vehicle.brand = brand || vehicle.brand;
+      vehicle.model = model || vehicle.model;
+      vehicle.image = image || vehicle.image;
+
+      // Save and commit
+      await queryRunner.manager.save(vehicle);
+      await queryRunner.commitTransaction();
+      return this.findOne(id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async remove(id: string) {
