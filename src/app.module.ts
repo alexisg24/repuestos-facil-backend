@@ -14,6 +14,10 @@ import { VehicleImages } from './vehicles/entities/vehicle-images.entity';
 import { ProductsModule } from './products/products.module';
 import { Product } from './products/entities/product.entity';
 import { ProductImage } from './products/entities/product-image.entity';
+import { StoresModule } from './stores/stores.module';
+import { Address } from './stores/entities/address.entity';
+import { Store } from './stores/entities/store.entity';
+import { StoreImage } from './stores/entities/store-image.entity';
 
 @Module({
   imports: [
@@ -34,6 +38,9 @@ import { ProductImage } from './products/entities/product-image.entity';
         VehicleImages,
         Product,
         ProductImage,
+        Address,
+        Store,
+        StoreImage,
       ],
       synchronize: true,
     }),
@@ -41,6 +48,7 @@ import { ProductImage } from './products/entities/product-image.entity';
     CategoriesModule,
     FilesModule,
     ProductsModule,
+    StoresModule,
   ],
 })
 export class AppModule {}

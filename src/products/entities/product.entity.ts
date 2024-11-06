@@ -3,6 +3,7 @@ import {
   Entity,
   JoinTable,
   ManyToMany,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -10,6 +11,8 @@ import { ProductQualityEnum, ProductTypeEnum } from '../enums/product.enums';
 import { Category } from 'src/categories/entities/category.entity';
 import { Vehicle } from 'src/vehicles/entities/vehicle.entity';
 import { ProductImage } from './product-image.entity';
+import { Store } from 'src/stores/entities/store.entity';
+import { Address } from 'src/stores/entities/address.entity';
 
 @Entity()
 export class Product {
@@ -28,7 +31,7 @@ export class Product {
   @Column('varchar')
   description: string;
 
-  @Column('varchar')
+  @Column('varchar', { array: true })
   keywords: string[];
 
   @Column({
@@ -48,6 +51,9 @@ export class Product {
   @Column('boolean', { default: false })
   universalCompatibility: boolean;
 
+  @Column('float', { default: 0 })
+  price: number;
+
   @ManyToMany(() => Category, (category) => category.products, {
     cascade: true,
   })
@@ -64,4 +70,19 @@ export class Product {
     cascade: true,
   })
   images?: ProductImage[];
+
+  @ManyToOne(() => Store, (store) => store.catalog, {
+    onDelete: 'CASCADE',
+  })
+  store: Store;
+
+  @ManyToMany(() => Address, (address) => address.products, {
+    cascade: false,
+  })
+  @JoinTable({
+    name: 'product_availability',
+    joinColumn: { name: 'product_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'address_id', referencedColumnName: 'id' },
+  })
+  availableIn: Address[];
 }

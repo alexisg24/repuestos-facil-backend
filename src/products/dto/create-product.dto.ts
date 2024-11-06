@@ -65,4 +65,12 @@ export class CreateProductDto {
   @IsUUID(undefined, { each: true })
   @ArrayMinSize(1)
   categories: string[];
+
+  @IsUUID()
+  storeId: string;
+
+  @IsArray()
+  @IsUUID('all', { each: true })
+  @ArrayMinSize(1)
+  addressesId: string[];
 }

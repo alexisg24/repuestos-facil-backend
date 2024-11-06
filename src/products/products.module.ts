@@ -6,6 +6,7 @@ import { VehiclesModule } from 'src/vehicles/vehicles.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
 import { ProductImage } from './entities/product-image.entity';
+import { StoresModule } from 'src/stores/stores.module';
 
 @Module({
   controllers: [ProductsController],
@@ -14,6 +15,7 @@ import { ProductImage } from './entities/product-image.entity';
     TypeOrmModule.forFeature([Product, ProductImage]),
     CategoriesModule,
     VehiclesModule,
+    StoresModule,
   ],
 })
 export class ProductsModule {}
