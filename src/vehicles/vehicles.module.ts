@@ -15,5 +15,6 @@ import { VehicleImages } from './entities/vehicle-images.entity';
     BrandsModule,
     ModelsModule,
   ],
+  exports: [VehiclesService],
 })
 export class VehiclesModule {}

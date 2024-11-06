@@ -7,7 +7,7 @@ import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Vehicle } from './entities/vehicle.entity';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { paginationResponse } from 'src/common/util';
 import { BrandsService } from 'src/brands/brands.service';
@@ -155,5 +155,15 @@ export class VehiclesService {
   async remove(id: string) {
     const vehicle = await this.findOne(id);
     return this.vehicleRepository.remove(vehicle);
+  }
+
+  async validateVehiclesByIds(ids: string[]): Promise<Vehicle[]> {
+    const vehicles = await this.vehicleRepository.findBy({ id: In(ids) });
+
+    if (vehicles.length !== ids.length) {
+      throw new NotFoundException(`One or more vehicles not found`);
+    }
+
+    return vehicles;
   }
 }

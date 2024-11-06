@@ -7,7 +7,7 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './entities/category.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { paginationResponse } from 'src/common/util';
 
@@ -78,5 +78,17 @@ export class CategoriesService {
   async remove(id: string) {
     const category = await this.findOne(id);
     return this.categoryRepository.remove(category);
+  }
+
+  async validateCategoriesByIds(ids: string[]): Promise<Category[]> {
+    const categories = await this.categoryRepository.find({
+      where: { id: In(ids) },
+    });
+
+    if (categories.length !== ids.length) {
+      throw new NotFoundException(`One or more categories not found`);
+    }
+
+    return categories;
   }
 }
