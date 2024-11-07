@@ -7,7 +7,7 @@ import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Vehicle } from './entities/vehicle.entity';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { paginationResponse } from 'src/common/util';
 import { BrandsService } from 'src/brands/brands.service';
@@ -28,6 +28,19 @@ export class VehiclesService {
     private readonly DataSource: DataSource,
   ) {}
 
+  private findQuery(search: string): SelectQueryBuilder<Vehicle> {
+    const queryBuilder = this.vehicleRepository.createQueryBuilder('vehicle');
+    return queryBuilder
+      .where(
+        `LOWER(vehicle.name) LIKE LOWER(:search) OR LOWER(brand.name) LIKE LOWER(:search) OR LOWER(model.name) LIKE LOWER(:search)`,
+        {
+          search: `%${search}%`,
+        },
+      )
+      .leftJoinAndSelect('vehicle.brand', 'brand')
+      .leftJoinAndSelect('vehicle.model', 'model')
+      .leftJoinAndSelect('vehicle.image', 'image');
+  }
   async create(createVehicleDto: CreateVehicleDto) {
     const brand = await this.brandsService.findOne(createVehicleDto.brandId);
     const model = await this.modelsService.findOne(createVehicleDto.modelId);
@@ -51,21 +64,9 @@ export class VehiclesService {
     const { limit, page } = paginationDto;
     const currentPage = page;
     const limitPerPage = limit;
-    const totalItems = await this.vehicleRepository.count();
+    const totalItems = await this.findQuery(paginationDto.search).getCount();
     const totalPages = Math.ceil(totalItems / limitPerPage);
-
-    const queryBuilder = this.vehicleRepository.createQueryBuilder('vehicle');
-
-    const vehicles = await queryBuilder
-      .where(
-        `LOWER(vehicle.name) LIKE LOWER(:search) OR LOWER(brand.name) LIKE LOWER(:search) OR LOWER(model.name) LIKE LOWER(:search)`,
-        {
-          search: `%${paginationDto.search}%`,
-        },
-      )
-      .leftJoinAndSelect('vehicle.brand', 'brand')
-      .leftJoinAndSelect('vehicle.model', 'model')
-      .leftJoinAndSelect('vehicle.image', 'image')
+    const vehicles = await this.findQuery(paginationDto.search)
       .take(limit)
       .skip((currentPage - 1) * limit)
       .getMany();

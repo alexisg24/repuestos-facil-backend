@@ -7,7 +7,7 @@ import { CreateModelDto } from './dto/create-model.dto';
 import { UpdateModelDto } from './dto/update-model.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Model } from './entities/model.entity';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { paginationResponse } from 'src/common/util';
 import { BrandsService } from 'src/brands/brands.service';
@@ -20,6 +20,18 @@ export class ModelsService {
     private readonly modelRepository: Repository<Model>,
     private readonly brandsService: BrandsService,
   ) {}
+
+  private findQuery(search: string): SelectQueryBuilder<Model> {
+    const queryBuilder = this.modelRepository.createQueryBuilder('models');
+    return queryBuilder
+      .where(
+        `LOWER(brand.name) LIKE LOWER(:search) OR LOWER(models.name) LIKE LOWER(:search)`,
+        {
+          search: `%${search}%`,
+        },
+      )
+      .leftJoinAndSelect('models.brand', 'brand');
+  }
 
   async create(createModelDto: CreateModelDto) {
     const brand = await this.brandsService.findOne(createModelDto.brandId);
@@ -36,18 +48,9 @@ export class ModelsService {
     const { limit, page } = paginationDto;
     const currentPage = page;
     const limitPerPage = limit;
-    const totalItems = await this.modelRepository.count();
+    const totalItems = await this.findQuery(paginationDto.search).getCount();
     const totalPages = Math.ceil(totalItems / limitPerPage);
-
-    const queryBuilder = this.modelRepository.createQueryBuilder('models');
-    const models = await queryBuilder
-      .where(
-        `LOWER(brand.name) LIKE LOWER(:search) OR LOWER(models.name) LIKE LOWER(:search)`,
-        {
-          search: `%${paginationDto.search}%`,
-        },
-      )
-      .leftJoinAndSelect('models.brand', 'brand')
+    const models = await this.findQuery(paginationDto.search)
       .skip((currentPage - 1) * limitPerPage)
       .take(limitPerPage)
       .getMany();

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 import { Store } from './entities/store.entity';
 import { Address } from './entities/address.entity';
 import { StoreImage } from './entities/store-image.entity';
@@ -21,6 +21,18 @@ export class StoresService {
     private readonly storeImageRepository: Repository<StoreImage>,
     private readonly dataSource: DataSource,
   ) {}
+
+  private findQuery(search: string): SelectQueryBuilder<Store> {
+    const queryBuilder = this.storesRepository.createQueryBuilder('stores');
+    return queryBuilder
+      .where(
+        `LOWER(stores.name) LIKE LOWER(:search) OR LOWER(addresses.title) LIKE LOWER(:search) OR LOWER(addresses.address) LIKE LOWER(:search)`,
+        { search: `%${search}%` },
+      )
+      .leftJoinAndSelect('stores.addresses', 'addresses')
+      .leftJoinAndSelect('stores.images', 'images');
+  }
+
   create(createStoreDto: CreateStoreDto) {
     const {
       addresses = [],
@@ -58,29 +70,9 @@ export class StoresService {
     const { limit, page, search } = paginationDto;
     const currentPage = page;
     const limitPerPage = limit;
-    const queryString = (queryName: string) =>
-      `LOWER(${queryName}.name) LIKE LOWER(:search) OR LOWER(addresses.title) LIKE LOWER(:search) OR LOWER(addresses.address) LIKE LOWER(:search)`;
-
-    const queryBuilderCount =
-      this.storesRepository.createQueryBuilder('stores');
-
-    const totalItems = await queryBuilderCount
-      .leftJoinAndSelect('stores.addresses', 'addresses')
-      .where(queryString('stores'), {
-        search: `%${search}%`,
-      })
-      .getCount();
+    const totalItems = await this.findQuery(search).getCount();
     const totalPages = Math.ceil(totalItems / limitPerPage);
-
-    const queryBuilder =
-      this.storesRepository.createQueryBuilder('storesQuery');
-
-    const stores = await queryBuilder
-      .leftJoinAndSelect('storesQuery.addresses', 'addresses')
-      .leftJoinAndSelect('storesQuery.images', 'images')
-      .where(queryString('storesQuery'), {
-        search: `%${search}%`,
-      })
+    const stores = await this.findQuery(search)
       .skip((currentPage - 1) * limitPerPage)
       .take(limitPerPage)
       .getMany();

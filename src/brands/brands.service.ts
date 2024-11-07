@@ -3,7 +3,7 @@ import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brand } from './entities/brand.entity';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { paginationResponse } from 'src/common/util';
 
@@ -13,6 +13,14 @@ export class BrandsService {
     @InjectRepository(Brand)
     private readonly brandRepository: Repository<Brand>,
   ) {}
+
+  private findQuery(search: string): SelectQueryBuilder<Brand> {
+    const queryBuilder = this.brandRepository.createQueryBuilder('brand');
+    return queryBuilder.where('LOWER(brand.name) LIKE LOWER(:search)', {
+      search: `%${search}%`,
+    });
+  }
+
   async create(createBrandDto: CreateBrandDto) {
     const brand = this.brandRepository.create(createBrandDto);
     await this.brandRepository.save(brand);
@@ -23,14 +31,10 @@ export class BrandsService {
     const { limit, page } = paginationDto;
     const currentPage = page;
     const limitPerPage = limit;
-    const totalItems = await this.brandRepository.count();
+    const totalItems = await this.findQuery(paginationDto.search).getCount();
     const totalPages = Math.ceil(totalItems / limitPerPage);
 
-    const queryBuilder = this.brandRepository.createQueryBuilder('brand');
-    const brands = await queryBuilder
-      .where('LOWER(brand.name) LIKE LOWER(:search)', {
-        search: `%${paginationDto.search}%`,
-      })
+    const brands = await this.findQuery(paginationDto.search)
       .skip((currentPage - 1) * limitPerPage)
       .take(limitPerPage)
       .getMany();

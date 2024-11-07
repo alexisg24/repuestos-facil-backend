@@ -7,7 +7,7 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './entities/category.entity';
-import { In, Repository } from 'typeorm';
+import { In, Repository, SelectQueryBuilder } from 'typeorm';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { paginationResponse } from 'src/common/util';
 
@@ -18,6 +18,13 @@ export class CategoriesService {
     private readonly categoryRepository: Repository<Category>,
   ) {}
 
+  private findQuery(search: string): SelectQueryBuilder<Category> {
+    const queryBuilder = this.categoryRepository.createQueryBuilder('category');
+    return queryBuilder.where('LOWER(category.name) LIKE LOWER(:search)', {
+      search: `%${search}%`,
+    });
+  }
+
   create(createCategoryDto: CreateCategoryDto) {
     const category = this.categoryRepository.create(createCategoryDto);
     return this.categoryRepository.save(category);
@@ -27,13 +34,9 @@ export class CategoriesService {
     const { limit, page } = paginationDto;
     const currentPage = page;
     const limitPerPage = limit;
-    const totalItems = await this.categoryRepository.count();
+    const totalItems = await this.findQuery(paginationDto.search).getCount();
     const totalPages = Math.ceil(totalItems / limitPerPage);
-    const queryBuilder = this.categoryRepository.createQueryBuilder('category');
-    const categories = await queryBuilder
-      .where('LOWER(category.name) LIKE LOWER(:search)', {
-        search: `%${paginationDto.search}%`,
-      })
+    const categories = await this.findQuery(paginationDto.search)
       .skip((currentPage - 1) * limitPerPage)
       .take(limitPerPage)
       .getMany();
