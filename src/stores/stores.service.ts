@@ -70,13 +70,11 @@ export class StoresService {
     const { limit, page, search } = paginationDto;
     const currentPage = page;
     const limitPerPage = limit;
-    const totalItems = await this.findQuery(search).getCount();
-    const totalPages = Math.ceil(totalItems / limitPerPage);
-    const stores = await this.findQuery(search)
+    const [stores, totalItems] = await this.findQuery(search)
       .skip((currentPage - 1) * limitPerPage)
       .take(limitPerPage)
-      .getMany();
-
+      .getManyAndCount();
+    const totalPages = Math.ceil(totalItems / limitPerPage);
     return paginationResponse<Store>({
       data: stores,
       totalPages: totalPages,

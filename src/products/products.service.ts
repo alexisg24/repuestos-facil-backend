@@ -76,10 +76,7 @@ export class ProductsService {
 
     const currentPage = page;
     const limitPerPage = limit;
-    const totalItems = await this.productRepository.count({ where: { store } });
-    const totalPages = Math.ceil(totalItems / limitPerPage);
-
-    const products = await this.productRepository.find({
+    const [products, totalItems] = await this.productRepository.findAndCount({
       where: { store },
       relations: [
         'categories',
@@ -91,6 +88,7 @@ export class ProductsService {
       skip: (currentPage - 1) * limitPerPage,
       take: limitPerPage,
     });
+    const totalPages = Math.ceil(totalItems / limitPerPage);
 
     return paginationResponse<Product>({
       data: products,

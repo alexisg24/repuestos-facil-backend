@@ -31,15 +31,13 @@ export class BrandsService {
     const { limit, page } = paginationDto;
     const currentPage = page;
     const limitPerPage = limit;
-    const totalItems = await this.findQuery(paginationDto.search).getCount();
-    const totalPages = Math.ceil(totalItems / limitPerPage);
-
-    const brands = await this.findQuery(paginationDto.search)
+    const [brands, totalItems] = await this.findQuery(paginationDto.search)
       .skip((currentPage - 1) * limitPerPage)
       .take(limitPerPage)
-      .getMany();
+      .getManyAndCount();
+    const totalPages = Math.ceil(totalItems / limitPerPage);
 
-    return paginationResponse({
+    return paginationResponse<Brand>({
       data: brands,
       page: currentPage,
       totalPages: totalPages,

@@ -64,12 +64,11 @@ export class VehiclesService {
     const { limit, page } = paginationDto;
     const currentPage = page;
     const limitPerPage = limit;
-    const totalItems = await this.findQuery(paginationDto.search).getCount();
-    const totalPages = Math.ceil(totalItems / limitPerPage);
-    const vehicles = await this.findQuery(paginationDto.search)
+    const [vehicles, totalItems] = await this.findQuery(paginationDto.search)
       .take(limit)
       .skip((currentPage - 1) * limit)
-      .getMany();
+      .getManyAndCount();
+    const totalPages = Math.ceil(totalItems / limitPerPage);
 
     return paginationResponse({
       data: vehicles,
