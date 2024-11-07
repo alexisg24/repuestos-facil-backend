@@ -72,8 +72,6 @@ export class ProductsService {
 
   async findAllByStore(storeId: string, paginationDto: PaginationDto) {
     const { limit, page } = paginationDto;
-    console.log(paginationDto);
-
     const store = await this.storesService.findOne(storeId);
 
     const currentPage = page;

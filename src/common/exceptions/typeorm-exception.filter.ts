@@ -19,6 +19,8 @@ export class TypeOrmCustomExceptionFilter implements ExceptionFilter {
       }
     }
 
+    console.log('QueryFailedError', exception);
+
     return response.status(500).json({
       status: 500,
       message: 'Internal server error',

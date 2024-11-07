@@ -7,6 +7,8 @@ import { Address } from './entities/address.entity';
 import { StoreImage } from './entities/store-image.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { generateSlug } from 'src/common/util/generate-slug.util';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { paginationResponse } from 'src/common/util';
 
 @Injectable()
 export class StoresService {
@@ -52,14 +54,49 @@ export class StoresService {
     return this.storesRepository.save(store);
   }
 
-  findAll() {
-    return `This action returns all stores`;
+  async findAll(paginationDto: PaginationDto) {
+    const { limit, page, search } = paginationDto;
+    const currentPage = page;
+    const limitPerPage = limit;
+    const queryString = (queryName: string) =>
+      `LOWER(${queryName}.name) LIKE LOWER(:search) OR LOWER(addresses.title) LIKE LOWER(:search) OR LOWER(addresses.address) LIKE LOWER(:search)`;
+
+    const queryBuilderCount =
+      this.storesRepository.createQueryBuilder('stores');
+
+    const totalItems = await queryBuilderCount
+      .leftJoinAndSelect('stores.addresses', 'addresses')
+      .where(queryString('stores'), {
+        search: `%${search}%`,
+      })
+      .getCount();
+    const totalPages = Math.ceil(totalItems / limitPerPage);
+
+    const queryBuilder =
+      this.storesRepository.createQueryBuilder('storesQuery');
+
+    const stores = await queryBuilder
+      .leftJoinAndSelect('storesQuery.addresses', 'addresses')
+      .leftJoinAndSelect('storesQuery.images', 'images')
+      .where(queryString('storesQuery'), {
+        search: `%${search}%`,
+      })
+      .skip((currentPage - 1) * limitPerPage)
+      .take(limitPerPage)
+      .getMany();
+
+    return paginationResponse<Store>({
+      data: stores,
+      totalPages: totalPages,
+      page: currentPage,
+      total: totalItems,
+    });
   }
 
   async findOne(id: string): Promise<Store> {
     const store = await this.storesRepository.findOne({
       where: { id },
-      relations: ['catalog', 'addresses', 'images'],
+      relations: ['images'],
     });
 
     if (!store) {
