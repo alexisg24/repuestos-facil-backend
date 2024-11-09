@@ -7,16 +7,7 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-
-export class StoreAddress {
-  @IsString()
-  @MinLength(3)
-  address: string;
-
-  @IsString()
-  @MinLength(3)
-  title: string;
-}
+import { CreateAddressDto } from './create-address.dto';
 
 export class CreateStoreDto {
   @IsString()
@@ -29,8 +20,8 @@ export class CreateStoreDto {
     message: ` must be an object containing title and address`,
   })
   @ArrayMinSize(1)
-  @Type(() => StoreAddress)
-  addresses: StoreAddress[];
+  @Type(() => CreateAddressDto)
+  addresses: CreateAddressDto[];
 
   @IsArray()
   @IsString({ each: true })
