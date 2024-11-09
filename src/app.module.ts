@@ -18,6 +18,7 @@ import { StoresModule } from './stores/stores.module';
 import { Address } from './stores/entities/address.entity';
 import { Store } from './stores/entities/store.entity';
 import { StoreImage } from './stores/entities/store-image.entity';
+import { ElasticSearchModule } from './elastic-search/elastic-search.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { StoreImage } from './stores/entities/store-image.entity';
     FilesModule,
     ProductsModule,
     StoresModule,
+    ElasticSearchModule,
   ],
 })
 export class AppModule {}

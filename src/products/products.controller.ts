@@ -18,6 +18,11 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
+  @Get()
+  async searchProducts(@Query() paginationDto: PaginationDto) {
+    return this.productsService.searchProducts(paginationDto);
+  }
+
   @Post()
   create(@Body() createProductDto: CreateProductDto) {
     return this.productsService.create(createProductDto);
@@ -42,7 +47,7 @@ export class ProductsController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.productsService.remove(+id);
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.productsService.remove(id);
   }
 }

@@ -3,7 +3,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
-import { DataSource, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ProductImage } from './entities/product-image.entity';
 import { CategoriesService } from 'src/categories/categories.service';
 import { VehiclesService } from 'src/vehicles/vehicles.service';
@@ -12,6 +12,7 @@ import { StoresService } from 'src/stores/stores.service';
 import { StoresAddressService } from 'src/stores/store-address.service';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { paginationResponse } from 'src/common/util';
+import { ElasticSearchService } from 'src/elastic-search/elastic-search.service';
 
 @Injectable()
 export class ProductsService {
@@ -22,10 +23,14 @@ export class ProductsService {
     private readonly imageRepository: Repository<ProductImage>,
     private readonly categoriesService: CategoriesService,
     private readonly vehiclesService: VehiclesService,
-    private readonly DataSource: DataSource,
     private readonly storesService: StoresService,
     private readonly storesAddressService: StoresAddressService,
+    private readonly elasticSearchService: ElasticSearchService,
   ) {}
+
+  async searchProducts(paginationDto: PaginationDto) {
+    return this.elasticSearchService.searchProducts(paginationDto);
+  }
 
   async create(createProductDto: CreateProductDto) {
     const {
@@ -67,7 +72,9 @@ export class ProductsService {
     newProduct.categories = productCategories;
     newProduct.compatibleVehicles = productCompatibleVehicles;
 
-    return await this.productRepository.save(newProduct);
+    const productResult = await this.productRepository.save(newProduct);
+    await this.elasticSearchService.indexProduct(productResult);
+    return productResult;
   }
 
   async findAllByStore(storeId: string, paginationDto: PaginationDto) {
@@ -120,7 +127,9 @@ export class ProductsService {
     return `This action updates a #${id} product`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} product`;
+  async remove(id: string) {
+    const product = await this.findOne(id);
+    await this.elasticSearchService.removeProduct(id);
+    return this.productRepository.remove(product);
   }
 }

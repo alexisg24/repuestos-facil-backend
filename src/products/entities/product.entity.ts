@@ -1,11 +1,13 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinTable,
   ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { ProductQualityEnum, ProductTypeEnum } from '../enums/product.enums';
 import { Category } from 'src/categories/entities/category.entity';
@@ -85,4 +87,10 @@ export class Product {
     inverseJoinColumn: { name: 'address_id', referencedColumnName: 'id' },
   })
   availableIn: Address[];
+
+  @CreateDateColumn({ type: 'timestamp' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamp' })
+  updatedAt: Date;
 }
