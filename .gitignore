@@ -4,6 +4,7 @@
 /build
 /postgresql
 /elasticsearch
+/static
 
 # Logs
 logs
