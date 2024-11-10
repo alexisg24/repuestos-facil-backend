@@ -1,63 +1,100 @@
 import { QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/types';
 import { nestedQueryBuilder } from './nested-query-builder.helper';
+import { SearchProductDto } from 'src/products/dto/search-product.dto';
 
 export const searchProductsQueryBuilder = (
-  search?: string,
+  searchProductDto: SearchProductDto,
 ): QueryDslQueryContainer => {
-  let query: QueryDslQueryContainer = {
-    match_all: {},
-  };
+  const { productQuality, productType, search, categoryId, vehicleId } =
+    searchProductDto;
+  const mustQueries: QueryDslQueryContainer[] = [];
 
   if (search) {
-    query = {
-      bool: {
-        should: [
-          {
-            multi_match: {
-              operator: 'and',
-              fuzziness: 'AUTO',
-              zero_terms_query: 'all',
-              query: search,
-              fields: [
-                'name',
-                'partNumber',
-                'description',
-                'productQuality',
-                'productType',
-                'keywords',
-              ],
-            },
-          },
-          // Aquí puedes añadir una consulta 'nested' para buscar en los campos anidados
-          nestedQueryBuilder({
-            path: 'compatibleVehicles',
-            fields: [
-              'compatibleVehicles.name',
-              'compatibleVehicles.transmission',
-              'compatibleVehicles.fuel',
-            ],
-            search,
-          }),
-          nestedQueryBuilder({
-            path: 'categories',
-            fields: ['categories.name'],
-            search,
-          }),
-          nestedQueryBuilder({
-            path: 'store',
-            fields: ['store.name'],
-            search,
-          }),
-          nestedQueryBuilder({
-            path: 'availableIn',
-            fields: ['availableIn.title', 'availableIn.address'],
-            search,
-          }),
-        ],
-        minimum_should_match: 1, // Asegura que al menos una de las condiciones sea cierta
+    mustQueries.push(
+      {
+        multi_match: {
+          operator: 'and',
+          fuzziness: 'AUTO',
+          zero_terms_query: 'all',
+          minimum_should_match: 1,
+          query: search,
+          fields: [
+            'name',
+            'partNumber',
+            'description',
+            'productQuality',
+            'productType',
+            'keywords',
+          ],
+        },
       },
-    };
+      nestedQueryBuilder({
+        path: 'compatibleVehicles',
+        fields: [
+          'compatibleVehicles.name',
+          'compatibleVehicles.transmission',
+          'compatibleVehicles.fuel',
+        ],
+        search,
+      }),
+      nestedQueryBuilder({
+        path: 'categories',
+        fields: ['categories.name'],
+        search,
+      }),
+      nestedQueryBuilder({
+        path: 'store',
+        fields: ['store.name'],
+        search,
+      }),
+      nestedQueryBuilder({
+        path: 'availableIn',
+        fields: ['availableIn.title', 'availableIn.address'],
+        search,
+      }),
+    );
   }
+
+  if (productType) {
+    mustQueries.push({ term: { productType: productType.toUpperCase() } });
+  }
+
+  if (productQuality) {
+    mustQueries.push({
+      term: { productQuality: productQuality.toUpperCase() },
+    });
+  }
+
+  if (categoryId) {
+    mustQueries.push({
+      nested: {
+        path: 'categories',
+        query: {
+          term: { 'categories.id': categoryId },
+        },
+      },
+    });
+  }
+
+  if (vehicleId) {
+    mustQueries.push({
+      nested: {
+        path: 'compatibleVehicles',
+        query: {
+          term: { 'compatibleVehicles.id': vehicleId },
+        },
+      },
+    });
+  }
+
+  const query = mustQueries.length
+    ? {
+        bool: {
+          should: mustQueries,
+          minimum_should_match: 1,
+        },
+      }
+    : { match_all: {} };
 
   return query;
 };

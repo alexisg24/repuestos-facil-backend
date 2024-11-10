@@ -13,6 +13,7 @@ import { StoresAddressService } from 'src/stores/store-address.service';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { paginationResponse } from 'src/common/util';
 import { ElasticSearchService } from 'src/elastic-search/elastic-search.service';
+import { SearchProductDto } from './dto/search-product.dto';
 
 @Injectable()
 export class ProductsService {
@@ -28,8 +29,8 @@ export class ProductsService {
     private readonly elasticSearchService: ElasticSearchService,
   ) {}
 
-  async searchProducts(paginationDto: PaginationDto) {
-    return this.elasticSearchService.searchProducts(paginationDto);
+  async searchProducts(searchProductDto: SearchProductDto) {
+    return this.elasticSearchService.searchProducts(searchProductDto);
   }
 
   async create(createProductDto: CreateProductDto) {

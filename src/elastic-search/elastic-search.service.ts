@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
-import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { paginationResponse } from 'src/common/util';
 import { Product } from 'src/products/entities/product.entity';
 import { searchProductsQueryBuilder } from './helpers/search-products-query-builder.helper';
+import { SearchProductDto } from 'src/products/dto/search-product.dto';
 
 @Injectable()
 export class ElasticSearchService {
@@ -31,25 +31,28 @@ export class ElasticSearchService {
     });
   }
 
-  async searchProducts(paginationDto: PaginationDto) {
-    const query = searchProductsQueryBuilder(paginationDto.search);
+  async searchProducts(searchProductDto: SearchProductDto) {
+    const query = searchProductsQueryBuilder(searchProductDto);
 
     const { hits } = await this.elasticSearchService.search<Product>({
       index: this.esIndex,
       body: {
-        size: paginationDto.limit,
-        from: (paginationDto.page - 1) * paginationDto.limit,
-        sort: paginationDto.search
-          ? [{ _score: { order: 'desc' } }]
-          : [{ createdAt: { order: 'desc' } }],
+        size: searchProductDto.limit,
+        from: (searchProductDto.page - 1) * searchProductDto.limit,
+        sort: [
+          { productType: { order: 'asc' } },
+          { productQuality: { order: 'desc' } },
+          { _score: { order: 'desc' } },
+          { createdAt: { order: 'desc' } },
+        ],
         query,
       },
     });
 
     const products = hits.hits.map((hit) => hit._source);
     const totalItems = Number((hits.total as { value: number })?.value) ?? 0;
-    const totalPages = Math.ceil(totalItems / paginationDto.limit);
-    const currentPage = paginationDto.page;
+    const totalPages = Math.ceil(totalItems / searchProductDto.limit);
+    const currentPage = searchProductDto.page;
 
     return paginationResponse({
       data: products,
