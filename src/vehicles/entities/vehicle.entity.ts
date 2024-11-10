@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { VehicleImages } from './vehicle-images.entity';
 import { Product } from 'src/products/entities/product.entity';
+import { User } from 'src/users/entities/user.entity';
 
 @Entity()
 export class Vehicle {
@@ -56,4 +57,12 @@ export class Vehicle {
     nullable: true,
   })
   compatibleProducts: Product[];
+
+  // Users with this vehicle
+  @ManyToMany(() => User, (user) => user.vehicles, {
+    cascade: false,
+    onDelete: 'CASCADE',
+    nullable: true,
+  })
+  users: User[];
 }

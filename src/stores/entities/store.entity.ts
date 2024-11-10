@@ -1,7 +1,14 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Address } from './address.entity';
 import { StoreImage } from './store-image.entity';
 import { Product } from 'src/products/entities/product.entity';
+import { User } from 'src/users/entities/user.entity';
 
 @Entity()
 export class Store {
@@ -39,4 +46,10 @@ export class Store {
     eager: false, // No carga los productos al consultar la tienda
   })
   catalog: Product[];
+
+  // User
+  @ManyToOne(() => User, (user) => user.stores, {
+    onDelete: 'CASCADE',
+  })
+  users: User;
 }

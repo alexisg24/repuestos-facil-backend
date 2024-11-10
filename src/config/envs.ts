@@ -10,6 +10,8 @@ export const envSchema = z.object({
   DB_PASSWORD: z.string().min(1),
   DB_DATABASE: z.string().min(1),
   ELASTIC_SEARCH_URL: z.string().default('http://localhost:9200'),
+  JWT_SECRET: z.string().min(1),
+  JWT_REFRESH_SECRET: z.string().min(1),
 });
 
 export type EnvSchema = z.infer<typeof envSchema>;

@@ -19,6 +19,9 @@ import { Address } from './stores/entities/address.entity';
 import { Store } from './stores/entities/store.entity';
 import { StoreImage } from './stores/entities/store-image.entity';
 import { ElasticSearchModule } from './elastic-search/elastic-search.module';
+import { UsersModule } from './users/users.module';
+import { User } from './users/entities/user.entity';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -42,6 +45,7 @@ import { ElasticSearchModule } from './elastic-search/elastic-search.module';
         Address,
         Store,
         StoreImage,
+        User,
       ],
       synchronize: true,
     }),
@@ -51,6 +55,8 @@ import { ElasticSearchModule } from './elastic-search/elastic-search.module';
     ProductsModule,
     StoresModule,
     ElasticSearchModule,
+    UsersModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
