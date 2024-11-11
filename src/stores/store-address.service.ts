@@ -91,7 +91,10 @@ export class StoresAddressService {
   }
 
   async validateAddressesByIds(ids: string[]): Promise<Address[]> {
-    const address = await this.addressRepository.findBy({ id: In(ids) });
+    const address = await this.addressRepository.findBy({
+      id: In(ids),
+      users: { id: this.authService.getUserFromRequest().sub },
+    });
     if (address.length !== ids.length) {
       throw new NotFoundException(`One or more addresses not found`);
     }
@@ -102,7 +105,7 @@ export class StoresAddressService {
     const address = await this.findOne(id);
     const user = this.authService.getUserFromRequest();
     if (address.users.id !== user.sub) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('This is not your address');
     }
     return address;
   }

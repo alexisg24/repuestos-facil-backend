@@ -8,6 +8,7 @@ import { Product } from './entities/product.entity';
 import { ProductImage } from './entities/product-image.entity';
 import { StoresModule } from 'src/stores/stores.module';
 import { ElasticSearchModule } from 'src/elastic-search/elastic-search.module';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
   controllers: [ProductsController],
@@ -18,6 +19,7 @@ import { ElasticSearchModule } from 'src/elastic-search/elastic-search.module';
     VehiclesModule,
     StoresModule,
     ElasticSearchModule,
+    AuthModule,
   ],
 })
 export class ProductsModule {}

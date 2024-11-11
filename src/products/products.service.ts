@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,6 +19,7 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { paginationResponse } from 'src/common/util';
 import { ElasticSearchService } from 'src/elastic-search/elastic-search.service';
 import { SearchProductDto } from './dto/search-product.dto';
+import { AuthService } from 'src/auth/auth.service';
 
 @Injectable()
 export class ProductsService {
@@ -27,6 +33,7 @@ export class ProductsService {
     private readonly storesService: StoresService,
     private readonly storesAddressService: StoresAddressService,
     private readonly elasticSearchService: ElasticSearchService,
+    private readonly authService: AuthService,
   ) {}
 
   async searchProducts(searchProductDto: SearchProductDto) {
@@ -49,12 +56,12 @@ export class ProductsService {
     const [
       productCategories,
       productCompatibleVehicles,
-      store,
+      { users: storeUser, ...store },
       storeAddresses,
     ] = await Promise.all([
       this.categoriesService.validateCategoriesByIds(categories),
       this.vehiclesService.validateVehiclesByIds(compatibleVehicles),
-      this.storesService.findOne(storeId),
+      this.storesService.findOneAndVerifyUser(storeId),
       this.storesAddressService.validateAddressesByIds(addressesId),
     ]);
 
@@ -69,11 +76,13 @@ export class ProductsService {
       slug: generateSlug(slug ?? product.name),
       store,
       availableIn: storeAddresses,
+      users: { id: storeUser.id },
     });
     newProduct.categories = productCategories;
     newProduct.compatibleVehicles = productCompatibleVehicles;
 
-    const productResult = await this.productRepository.save(newProduct);
+    const { users: _, ...productResult } =
+      await this.productRepository.save(newProduct);
     await this.elasticSearchService.indexProduct(productResult);
     return productResult;
   }
@@ -115,7 +124,11 @@ export class ProductsService {
         'images',
         'availableIn',
         'store',
+        'users',
       ],
+      select: {
+        users: { id: true },
+      },
     });
     if (!product) {
       throw new NotFoundException(`Product with id ${id} not found`);
@@ -129,8 +142,18 @@ export class ProductsService {
   }
 
   async remove(id: string) {
-    const product = await this.findOne(id);
+    const product = await this.findOneAndVerifyUser(id);
     await this.elasticSearchService.removeProduct(id);
     return this.productRepository.remove(product);
+  }
+
+  async findOneAndVerifyUser(id: string) {
+    const product = await this.findOne(id);
+
+    const user = this.authService.getUserFromRequest();
+    if (product.users.id !== user.sub) {
+      throw new UnauthorizedException('This is not your product');
+    }
+    return product;
   }
 }

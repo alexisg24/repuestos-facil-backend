@@ -15,6 +15,7 @@ import { Vehicle } from 'src/vehicles/entities/vehicle.entity';
 import { ProductImage } from './product-image.entity';
 import { Store } from 'src/stores/entities/store.entity';
 import { Address } from 'src/stores/entities/address.entity';
+import { User } from 'src/users/entities/user.entity';
 
 @Entity()
 export class Product {
@@ -87,6 +88,12 @@ export class Product {
     inverseJoinColumn: { name: 'address_id', referencedColumnName: 'id' },
   })
   availableIn: Address[];
+
+  // User
+  @ManyToOne(() => User, (user) => user.products, {
+    onDelete: 'CASCADE',
+  })
+  users: User;
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;

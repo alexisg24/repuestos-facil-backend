@@ -10,7 +10,7 @@ export class ElasticSearchService {
   private readonly esIndex = 'products';
   constructor(private readonly elasticSearchService: ElasticsearchService) {}
 
-  async indexProduct(product: Product) {
+  async indexProduct(product: Omit<Product, 'users'>) {
     await this.elasticSearchService.index({
       index: this.esIndex,
       id: product.id,
@@ -69,7 +69,7 @@ export class ElasticSearchService {
     });
   }
 
-  async onModuleinit() {
+  async onModuleInit() {
     await this.createIndex();
   }
 

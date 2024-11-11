@@ -166,7 +166,7 @@ export class StoresService {
     const store = await this.findOne(id);
     const user = this.authService.getUserFromRequest();
     if (store.users.id !== user.sub) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('This is not your store');
     }
     return store;
   }
