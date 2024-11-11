@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
@@ -9,6 +14,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { generateSlug } from 'src/common/util/generate-slug.util';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { paginationResponse } from 'src/common/util';
+import { AuthService } from 'src/auth/auth.service';
 
 @Injectable()
 export class StoresService {
@@ -20,6 +26,8 @@ export class StoresService {
     @InjectRepository(StoreImage)
     private readonly storeImageRepository: Repository<StoreImage>,
     private readonly dataSource: DataSource,
+
+    private readonly authService: AuthService,
   ) {}
 
   private findQuery(search: string): SelectQueryBuilder<Store> {
@@ -33,7 +41,7 @@ export class StoresService {
       .leftJoinAndSelect('stores.images', 'images');
   }
 
-  create(createStoreDto: CreateStoreDto) {
+  async create(createStoreDto: CreateStoreDto) {
     const {
       addresses = [],
       emails = [],
@@ -43,6 +51,7 @@ export class StoresService {
       name,
     } = createStoreDto;
 
+    const { sub } = this.authService.getUserFromRequest();
     const store = this.storesRepository.create({
       name,
       logo: logo ?? null,
@@ -61,9 +70,13 @@ export class StoresService {
       }),
       catalog: [],
       slug: generateSlug(name),
+      users: {
+        id: sub,
+      },
     });
 
-    return this.storesRepository.save(store);
+    const { users, ...result } = await this.storesRepository.save(store);
+    return result;
   }
 
   async findAll(paginationDto: PaginationDto) {
@@ -86,13 +99,14 @@ export class StoresService {
   async findOne(id: string): Promise<Store> {
     const store = await this.storesRepository.findOne({
       where: { id },
-      relations: ['images'],
+      relations: ['images', 'users'],
+      select: {
+        users: { id: true },
+      },
     });
-
     if (!store) {
       throw new NotFoundException(`Store with id ${id} not found`);
     }
-
     return store;
   }
 
@@ -100,7 +114,7 @@ export class StoresService {
     if (!updateStoreDto) {
       throw new NotFoundException(`No data to update found`);
     }
-    const store = await this.findOne(id);
+    const store = await this.findOneAndVerifyUser(id);
     const {
       images = [],
       emails = [],
@@ -144,7 +158,16 @@ export class StoresService {
   }
 
   async remove(id: string) {
-    const store = await this.findOne(id);
+    const store = await this.findOneAndVerifyUser(id);
     return this.storesRepository.remove(store);
+  }
+
+  async findOneAndVerifyUser(id: string) {
+    const store = await this.findOne(id);
+    const user = this.authService.getUserFromRequest();
+    if (store.users.id !== user.sub) {
+      throw new UnauthorizedException();
+    }
+    return store;
   }
 }

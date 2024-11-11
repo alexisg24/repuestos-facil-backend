@@ -8,6 +8,7 @@ import {
   Delete,
   ParseUUIDPipe,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { StoresService } from './stores.service';
 import { CreateStoreDto } from './dto/create-store.dto';
@@ -15,6 +16,8 @@ import { UpdateStoreDto } from './dto/update-store.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { StoresAddressService } from './store-address.service';
 import { CreateAddressDto } from './dto/create-address.dto';
+import { AuthGuard } from 'src/auth/guards/auth.guard';
+import { UpdateAddressDto } from './dto/update-address.dto';
 
 @Controller('stores')
 export class StoresController {
@@ -23,6 +26,7 @@ export class StoresController {
     private readonly storesAddressService: StoresAddressService,
   ) {}
 
+  @UseGuards(AuthGuard)
   @Post()
   create(@Body() createStoreDto: CreateStoreDto) {
     return this.storesService.create(createStoreDto);
@@ -38,6 +42,7 @@ export class StoresController {
     return this.storesService.findOne(id);
   }
 
+  @UseGuards(AuthGuard)
   @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -46,6 +51,7 @@ export class StoresController {
     return this.storesService.update(id, updateStoreDto);
   }
 
+  @UseGuards(AuthGuard)
   @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.storesService.remove(id);
@@ -59,6 +65,7 @@ export class StoresController {
     return this.storesAddressService.findManyByStore(storeId, paginationDto);
   }
 
+  @UseGuards(AuthGuard)
   @Post(':id/addresses')
   assignAddressToStore(
     @Param('id', ParseUUIDPipe) storeId: string,
@@ -70,8 +77,18 @@ export class StoresController {
     );
   }
 
+  @UseGuards(AuthGuard)
   @Delete('addresses/:addressId')
   removeAddress(@Param('addressId', ParseUUIDPipe) addressId: string) {
     return this.storesAddressService.remove(addressId);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch('addresses/:addressId')
+  updateAddress(
+    @Param('addressId', ParseUUIDPipe) addressId: string,
+    @Body() updateAddressDto: UpdateAddressDto,
+  ) {
+    return this.storesAddressService.update(addressId, updateAddressDto);
   }
 }

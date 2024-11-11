@@ -11,6 +11,7 @@ import { InternalJwtService } from './internal-jwt.service';
 @Module({
   controllers: [AuthController],
   providers: [AuthService, InternalJwtService],
+  exports: [AuthService],
   imports: [
     UsersModule,
     TypeOrmModule.forFeature([User]),

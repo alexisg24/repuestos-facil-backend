@@ -1,3 +1,4 @@
+import { Address } from 'src/stores/entities/address.entity';
 import { Store } from 'src/stores/entities/store.entity';
 import { Vehicle } from 'src/vehicles/entities/vehicle.entity';
 import {
@@ -40,4 +41,11 @@ export class User {
     cascade: true,
   })
   stores: Store[];
+
+  //   User stores
+  @OneToMany(() => Address, (address) => address.users, {
+    eager: false,
+    cascade: true,
+  })
+  addresses: Address[];
 }
