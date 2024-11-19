@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Injectable } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { paginationResponse } from 'src/common/util';
@@ -22,11 +23,15 @@ export class ElasticSearchService {
   }
 
   async updateProduct(id: string, partialProduct: Partial<Product>) {
+    const { users: _, images, ...rest } = partialProduct;
     await this.elasticSearchService.update({
       index: this.esIndex,
       id,
       body: {
-        doc: partialProduct,
+        doc: {
+          ...rest,
+          images: images?.map((image) => image.url) ?? [],
+        },
       },
     });
   }

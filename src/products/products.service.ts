@@ -8,7 +8,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { ProductImage } from './entities/product-image.entity';
 import { CategoriesService } from 'src/categories/categories.service';
 import { VehiclesService } from 'src/vehicles/vehicles.service';
@@ -34,6 +34,7 @@ export class ProductsService {
     private readonly storesAddressService: StoresAddressService,
     private readonly elasticSearchService: ElasticSearchService,
     private readonly authService: AuthService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async searchProducts(searchProductDto: SearchProductDto) {
@@ -136,9 +137,82 @@ export class ProductsService {
     return product;
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    console.log(updateProductDto);
-    return `This action updates a #${id} product`;
+  async update(id: string, updateProductDto: UpdateProductDto) {
+    const product = await this.findOneAndVerifyUser(id);
+
+    const {
+      images = [],
+      categories = [],
+      compatibleVehicles = [],
+      addressesId = [],
+      ...rest
+    } = updateProductDto;
+
+    // Validate multiple instances at same time
+    const promises = await Promise.all([
+      this.categoriesService.validateCategoriesByIds(categories),
+      this.vehiclesService.validateVehiclesByIds(compatibleVehicles),
+      this.storesAddressService.validateAddressesByIds(addressesId),
+    ]);
+
+    const validatedCategories = promises[0];
+    const validatedCompatibleVehicles = promises[1];
+    const validatedStoreAddresses = promises[2];
+
+    // Query runner
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      let productImages = product.images ?? [];
+
+      if (images.length > 0) {
+        // Delete product images
+        if (productImages?.length > 0) {
+          await queryRunner.manager.delete(ProductImage, {
+            product: { id: product.id },
+          });
+        }
+        // Set new images
+        productImages = images.map((image) =>
+          this.imageRepository.create({
+            url: image,
+          }),
+        );
+        productImages = await queryRunner.manager.save(productImages);
+      }
+
+      // Update product model
+      Object.assign(product, { ...rest, images: productImages });
+
+      product.categories =
+        categories.length > 0 ? validatedCategories : product.categories;
+
+      product.compatibleVehicles =
+        compatibleVehicles.length > 0
+          ? validatedCompatibleVehicles
+          : product.compatibleVehicles;
+
+      product.availableIn =
+        addressesId.length > 0 ? validatedStoreAddresses : product.availableIn;
+
+      // Save changes
+      await queryRunner.manager.save(product);
+
+      // Update ElasticSearch
+      await this.elasticSearchService.updateProduct(id, product);
+
+      // Commit transaction
+      await queryRunner.commitTransaction();
+
+      // Return product
+      return this.findOne(id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async remove(id: string) {
