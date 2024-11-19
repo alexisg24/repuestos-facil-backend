@@ -22,6 +22,7 @@ import { ElasticSearchModule } from './elastic-search/elastic-search.module';
 import { UsersModule } from './users/users.module';
 import { User } from './users/entities/user.entity';
 import { AuthModule } from './auth/auth.module';
+import { ProfileModule } from './profile/profile.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { AuthModule } from './auth/auth.module';
     ElasticSearchModule,
     UsersModule,
     AuthModule,
+    ProfileModule,
   ],
 })
 export class AppModule {}
