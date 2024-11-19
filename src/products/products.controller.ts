@@ -40,9 +40,9 @@ export class ProductsController {
     return this.productsService.findAllByStore(storeId, paginationDto);
   }
 
-  @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.productsService.findOne(id);
+  @Get(':slug')
+  findOne(@Param('slug') id: string) {
+    return this.productsService.findOneBySlug(id);
   }
 
   @UseGuards(AuthGuard)

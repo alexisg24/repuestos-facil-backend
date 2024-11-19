@@ -137,6 +137,27 @@ export class ProductsService {
     return product;
   }
 
+  async findOneBySlug(slug: string) {
+    const product = await this.productRepository.findOne({
+      where: { slug },
+      relations: [
+        'categories',
+        'compatibleVehicles',
+        'images',
+        'availableIn',
+        'store',
+        'users',
+      ],
+      select: {
+        users: { id: true },
+      },
+    });
+    if (!product) {
+      throw new NotFoundException(`Product with slug: ${slug} not found`);
+    }
+    return product;
+  }
+
   async update(id: string, updateProductDto: UpdateProductDto) {
     const product = await this.findOneAndVerifyUser(id);
 
